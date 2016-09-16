@@ -16,7 +16,7 @@ io.sockets.on('connection',function(socket){
 	console.log("Connected");
 	
 	setTimeout(function(){
-			io.sockets.emit('Change Signal',1);
+			socket.emit('Change Signal',1);
 	},10000);
 });
 

@@ -22,7 +22,7 @@
     <div id="map"></div>
     <script>
 				jQuery(function(){
-					var socket=io.connect('ws://localhost');
+					var socket=io.connect('ws://emergency-vehicle.herokuapp.com/');
 
 				socket.on('Change Signal',function(data){
 					console.log("Change Signal");
