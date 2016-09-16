@@ -1,0 +1,15 @@
+{
+  "name": "ecgs",
+  "version": "0.0.1",
+  "private": "true",
+  "main": "server.js",
+  "author": "Pratik",
+  "engines": {
+    "node": "4.2.1",
+    "npm": "2.11.1"
+  },
+  "dependencies": {
+    "express": "4.12.3",
+    "socket.io": "1.3.7"
+  }
+}
