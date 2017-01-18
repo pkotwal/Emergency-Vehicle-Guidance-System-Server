@@ -22,12 +22,20 @@
     <div id="map"></div>
     <script>
 				jQuery(function(){
-					var socket=io.connect('ws://emergency-vehicle.herokuapp.com/');
+//					var socket=io.connect('ws://emergency-vehicle.herokuapp.com/');
+					var socket=io.connect('ws://127.0.0.1/');
 
+                    
+                socket.on('user location',function(data){
+                    console.log(data.latitude+","+data.longitude);
+                });
+                    
 				socket.on('Change Signal',function(data){
 					console.log("Change Signal");
 					changeSignal(data);
-				})
+				});
+                
+                
 
 			});
 			
@@ -74,13 +82,20 @@
           center: {lat: 19.0645127, lng: 72.8357473},
           zoom: 19,
 					styles: [
-           {
-              featureType: 'poi.business',
-              elementType: 'labels',
-              stylers: [
-                { visibility: 'off' }
-              ]
-            }
+                       {
+                          featureType: 'road',
+                          elementType: 'all',
+                          stylers: [
+                            { visibility: 'on' }
+                          ]
+                        },
+                        {
+                          featureType: 'poi',
+                          elementType: 'all',
+                          stylers: [
+                            { visibility: 'off' }
+                          ]
+                        }             
           ]
 
         });
