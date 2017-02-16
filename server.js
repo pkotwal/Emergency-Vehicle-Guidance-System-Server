@@ -1,16 +1,29 @@
 var express = require('express'),
 		app = express(),
+        moment = require('moment'),
 		server = require('http').createServer(app),
 		port = process.env.PORT || 80,
 		io=require('socket.io').listen(server),
-        bodyParser = require('body-parser');
+        mongoose = require('mongoose'),
+        bodyParser = require('body-parser'),
+        request = require('request'),
+        polyline = require('polyline'),
+        models = require('./models');
+
+var User = mongoose.model('User');
+var Signal = mongoose.model('Signal');
 
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json());
 
 app.get('/',function(req,res){
 	res.sendFile(__dirname + '/control.html');
-	console.log("User connected");
+	console.log("Control Page requested");
+});
+
+app.get('/addSignals',function(req,res){
+	res.sendFile(__dirname + '/addSignals.html');
+	console.log("Add Signal Page Requested");
 });
 
 app.post('/login',function(req,res){
@@ -20,17 +33,110 @@ app.post('/login',function(req,res){
 	
 	console.log("Name: "+name+" Registration:"+registration+" Type:"+type);
     
-    res.send("Data Received By Server");
+    User.findOne({vehicle_registration:registration}, function(err, user){
+        if(err){res.status(500).send(err);}
+        if(!use){
+            var user=new User();
+            user.name=name;
+            user.vehicle_registration = registration;
+            user.vehicle_type = type;
+            user.location.latitude = 0;
+            user.location.longitude = 0;
+            user.location.last_updated = 0;
+            user.location.bearing = 0;
+
+            user.save(function(err, user) {
+               if(err){res.status(500).send(err);}
+                res.send({state:"SUCCESS", user: user, message: "SignUp Successful"});
+            });
+        }else {
+            res.send({state:"FAILURE", user: user, message: "Vehicle Already Registered"});
+        }
+    });
+});
+
+app.post('/directionRequest', function(req, res){
+    var slat = req.body.slat;
+    var slong = req.body.slong;
+    var dlat = req.body.dlat;
+    var dlong = req.body.dlong;
+    
+    console.log("Source: "+slat+","+slong+" Destination: "+dlat+","+dlong);
+    
+    request.get(
+    'https://maps.googleapis.com/maps/api/directions/json?origin='+slat+','+slong+'&destination='+dlat+','+dlong+'&key=AIzaSyAPevMvwLJvZYzfbbDPDEheI62QpV8QQS0',
+    function (error, response, body) {
+        if (!error && response.statusCode == 200) {
+            console.log(body);
+            var parsed = JSON.parse(body);
+//            console.log(parsed);
+            var routes = (parsed.routes)[0];
+            var bounds = routes.bounds;
+            
+            var northeast = bounds.northeast;
+            var southwest = bounds.southwest;
+            
+            var signalsPassed=[];
+            var signalsToCheck;
+            Signal.find({'location.latitude':{$gte:southwest.lat},'location.longitude':{$gte:southwest.lng},'location.latitude':{$lte:northeast.lat},'location.longitude':{$lte:northeast.lng}},function(err, signals){
+                if (err){res.status(500).send(err);}					
+                if(signals){               
+//                    console.log(signals);
+                    signalsToCheck = signals;
+                     var legs = (routes.legs)[0];
+            var steps = legs.steps;
+            steps.forEach(function(step, index){
+                var poly = step.polyline;
+                var points = poly.points;
+                var decoded = polyline.decode(points);
+                for(var i = 0; i < decoded.length - 1; i++){
+                    signalsToCheck.forEach(function(signalToCkeck){
+                        if(signalToCkeck.location.latitude >= Math.min(decoded[i][0],decoded[i+1][0]) && signalToCkeck.location.latitude <= Math.max(decoded[i][0],decoded[i+1][0]) && signalToCkeck.location.longitude >= Math.min(decoded[i][1],decoded[i+1][1]) &&signalToCkeck.location.longitude <= Math.max(decoded[i][1],decoded[i+1][1]) ){
+//                            console.log(signalToCkeck+" "+decoded[i][0]+","+decoded[i][1]+" "+decoded[i+1][0]+","+decoded[i+1][1]);
+                            var error = Math.abs(bearing(decoded[i][0], decoded[i+1][0], decoded[i][1], decoded[i+1][1]) - bearing(signalToCkeck.location.latitude, decoded[i+1][0], signalToCkeck.location.longitude, decoded[i+1][1])); 
+//                            console.log(error);
+                            if(error<10){
+//                                console.log(signalToCkeck);
+                                signalsPassed.push(signalToCkeck);
+                            }
+                        }                       
+                    });
+//                    bearing(decoded[i][0], decoded[i+1][0], decoded[i][1], decoded[i+1][1]); 
+                }    
+            });         
+                }else{
+                    console.log("khg");
+                }
+                sendResponse();
+            });
+            function sendResponse(){
+                res.json({'signals':signalsPassed,'directions':body});   
+            }
+        }
+    }
+);
+
 });
 
 app.post('/locationUpdate',function(req,res){
+    var userId = req.body.user_id;
 	var latitude = req.body.latitude;
 	var longitude = req.body.longitude;
-	io.sockets.emit("user location",{latitude:latitude,longitude:longitude});
-	console.log("latitude: "+latitude+" longitude:"+longitude);
-    res.send("Location Updated");
+	var bearing = req.body.bearing;
     
-    
+    User.update({_id:userId},
+                {'location.latitude':latitude,
+                 'location.longitude':longitude,
+                 'location.bearing':bearing,
+                 'location.last_updated':moment.utc().format("x")},
+                function(err,users){		
+                    if (err){res.status(500).send(err);}					
+                    if(users){           
+                        io.sockets.emit("user location",{user_id:userId, latitude:latitude, longitude:longitude, bearing:bearing});	                           
+//                        console.log("userId: "+userId+" latitude: "+latitude+" longitude:"+longitude+" bearing:"+bearing);
+                        res.send({state:"response_state_success", message: "User Verified"});
+                    }
+    });
 });
 
 server.listen(port);
@@ -38,11 +144,113 @@ console.log("Server Started");
 
 io.sockets.on('connection',function(socket){
 	console.log("Connected");
-	
-	setTimeout(function(){
-			socket.emit('Change Signal',1);
-	},10000);
+    
+        var allsignals;
+    Signal.find({},function(err, signals){
+        if (err){res.status(500).send(err);}					
+        if(signals){               
+            allsignals = signals;
+            findUsers();
+        }else{
+            console.log("khg");
+        }
+    });
+    var allusers;
+    function findUsers(){
+      User.find({'location.last_updated':{$ne:0}},function(err, users){
+        if (err){res.status(500).send(err);}					
+        if(users){               
+            allusers = users;
+//            console.log(allusers);
+            socket.emit('Init Map',{allsignals,allusers});
+        }else{
+            console.log("khg");
+        }
+    });
+   
+    }
+//	setTimeout(function(){
+//			socket.emit('Change Signal',1);
+//	},10000);
+    
+    socket.on('Add Signal',function(data){
+        var signalGroup = data.signalGroup;
+        var signals = data.signals;
+        
+        signals.forEach(function(sig){
+            var signal = new Signal();
+            signal.signalGroup=signalGroup;
+            signal.status=0;
+            signal.premptedBy=0;
+            signal.location.latitude=sig.lat;
+            signal.location.longitude=sig.lng;
+            signal.activationDirection.Xaxis=0;
+            signal.activationDirection.Yaxis=0;
+            signal.save(function(err, signal) {
+               if(err){res.status(500).send(err);}
+//                console.log("Signal Added");
+                io.sockets.emit("Draw Signal",signal);
+            });
+        });
+    });
 });
+
+function bearing(lat1, lat2, lon1, lon2){
+
+    var φ1 = lat1*(Math.PI/180);
+    var φ2 = lat2*(Math.PI/180);
+    var λ1 = lon1*(Math.PI/180);
+    var λ2 = lon2*(Math.PI/180);
+
+    var y = Math.sin(λ2-λ1) * Math.cos(φ2);
+    var x = Math.cos(φ1)*Math.sin(φ2) -
+            Math.sin(φ1)*Math.cos(φ2)*Math.cos(λ2-λ1);
+    var brng = Math.atan2(y, x)*(180/Math.PI);
+    return brng;
+
+    console.log(lat1+","+lon1+" "+lat2+","+lon2+" : "+brng);
+}
 
 //AIzaSyAPevMvwLJvZYzfbbDPDEheI62QpV8QQS0 Directions API
 // mongo: pratik popo1234
+
+
+//<script>
+//var lat1 = 19.06361;
+//var lon1 = 72.83524;
+//
+//var lat2 = 19.06368;
+//var lon2 = 72.83563;
+//
+//var x = 19.06364;
+//var y = 72.83541;
+//coords(lat1, lat2, lon1, lon2);
+//coords(lat1, x, lon1, y);
+//
+//
+//function coords(lat1, lat2, lon1, lon2){
+//
+//var R = 6371e3; // metres
+//
+//var φ1 = lat1*(3.14/180);
+//var φ2 = lat2*(3.14/180);
+//var λ1 = lon1*(3.14/180);
+//var λ2 = lon2*(3.14/180);
+//var Δφ = (lat2-lat1)*(3.14/180);
+//var Δλ = (lon2-lon1)*(3.14/180);
+//
+//var a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+//        Math.cos(φ1) * Math.cos(φ2) *
+//        Math.sin(Δλ/2) * Math.sin(Δλ/2);
+//var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+//
+//var d = R * c;
+//
+//var y = Math.sin(λ2-λ1) * Math.cos(φ2);
+//var x = Math.cos(φ1)*Math.sin(φ2) -
+//        Math.sin(φ1)*Math.cos(φ2)*Math.cos(λ2-λ1);
+//var brng = Math.atan2(y, x)*(180/3.14);
+//
+//console.log(brng);
+//}
+//</script>

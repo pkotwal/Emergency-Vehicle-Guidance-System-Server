@@ -5,120 +5,187 @@
 		<script type="text/javascript" src="/socket.io/socket.io.js"></script>
     
 		<title>Simple Map</title>
-    <meta name="viewport" content="initial-scale=1.0">
-    <meta charset="utf-8">
-    <style>
-      html, body {
-        height: 100%;
-        margin: 0;
-        padding: 0;
-      }
-      #map {
-        height: 100%;
-      }
-    </style>
+        <meta name="viewport" content="initial-scale=1.0">
+        <meta charset="utf-8">
+        <style>
+            html, body {
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            #map {
+                height: 100%;
+            }
+        </style>
   </head>
   <body>
-    <div id="map"></div>
-    <script>
-				jQuery(function(){
-					var socket=io.connect('ws://emergency-vehicle.herokuapp.com/');
-//					var socket=io.connect('ws://127.0.0.1/');
-
+      <div style="position:fixed; top:10px; right:10px; z-index:99999;">PUT CURRENT TIME HERE</div>
+      <div id="map"></div>
+      <script>      
+        var allsignals; 
+        var userMarkers=[];
+          
+        jQuery(function(){
+//			var socket=io.connect('ws://emergency-vehicle.herokuapp.com/');
+  		    var socket=io.connect('ws://127.0.0.1/');
+            
+            socket.on('user location',function(data){
+                var i;
+                for(i = 0; i < allusers.length; i++){
+                   if(allusers[i]._id  == data.user_id){
+                       break;
+                   } 
+                }
+                userMarkers[i].setPosition( new google.maps.LatLng( data.latitude, data.longitude ) );
+            });
                     
-                socket.on('user location',function(data){
-                    console.log(data.latitude+","+data.longitude);
-                });
-                    
-				socket.on('Change Signal',function(data){
-					console.log("Change Signal");
-					changeSignal(data);
-				});
-                
-                
-
+			socket.on('Change Signal',function(data){
+				console.log("Change Signal");
+				changeSignal(data);
 			});
+            
+            socket.on('Init Map',function(data){
+                allsignals = data.allsignals;
+                allusers = data.allusers;
+                console.log(data);
+                initMap();
+			});
+            
+              socket.on('Draw Signal',function(data){
+                allsignals.push(data);
+                var color;
+                if(data.status == 0){
+                    color="#00000";
+                }else if(data.status == 1){
+                    color="#00FF00";
+                }else if(data.status == -1){
+                    color="#FF0000";
+                }
+                var sigCirc = new google.maps.Circle({
+                    strokeColor: color,
+                    strokeOpacity: 1,
+                    strokeWeight: 2,
+                    fillColor: color,
+                    fillOpacity: 0.5,
+                    map: map,
+                    center:  new google.maps.LatLng(data.location.latitude, data.location.longitude),
+                    radius: 2
+                }); 
+                signalCircle.push(sigCirc);
+            });
+        });	
+	
+        function changeSignal(s){
+			signalCircle[s].setMap(null);
+			console.log(allsignals['signal2']);
+			signalCircle[s] = new google.maps.Circle({
+                strokeColor: '#00ff00',
+                strokeOpacity: 1,
+                strokeWeight: 2,
+                fillColor: '#00ff00',
+                fillOpacity: 0.5,
+                map: map,
+                center: allsignals['signal2'].center,
+                radius: 2
+            });
+        }	
 			
-			
-			
-				
-				function changeSignal(s){
-					signalCircle[s].setMap(null);
-					console.log(allsignals['signal2'])
-					signalCircle[s] = new google.maps.Circle({
-            strokeColor: '#00ff00',
-            strokeOpacity: 1,
-            strokeWeight: 2,
-            fillColor: '#00ff00',
-            fillOpacity: 0.5,
-            map: map,
-            center: allsignals['signal2'].center,
-            radius: 2
-          });
-				}
-			
-			
-			 var allsignals = {
-        signal1: {
-          center: {lat: 19.063752, lng: 72.835123},
-					color: '#FF0000'
-				},signal2: {
-				  center: {lat: 19.063532, lng: 72.835118},
-					color: '#000000'
-			  },signal3: {
-					center: {lat: 19.063669, lng: 72.834997},
-					color: '#00FF00'
-				} 
-      };
-
-			
-      var map;
-							var signalCircle=[];
-      function initMap() {
-				
-
-				
-        map = new google.maps.Map(document.getElementById('map'), {
-          center: {lat: 19.0645127, lng: 72.8357473},
-          zoom: 19,
-					styles: [
-                       {
-                          featureType: 'road',
-                          elementType: 'all',
-                          stylers: [
+        
+        var map;
+        var signalCircle=[];
+    
+        function initMap() {			
+            console.log("Init Map called");
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: {lat:19.06356, lng: 72.83511},
+                zoom: 19,
+				styles: [
+                    {
+                        featureType: 'road',
+                        elementType: 'all',
+                        stylers: [
                             { visibility: 'on' }
-                          ]
-                        },
-                        {
-                          featureType: 'poi',
-                          elementType: 'all',
-                          stylers: [
+                        ]
+                    },
+                    {
+                        featureType: 'poi',
+                        elementType: 'all',
+                        stylers: [
                             { visibility: 'off' }
-                          ]
-                        }             
-          ]
+                        ]
+                    }             
+                ]
+            });
+				
+            var count=0;
+            
+            allsignals.forEach(function(signal){
+                // Add the circle for this city to the map.
+                console.log(signal);
+                var color;
+                if(signal.status == 0){
+                    color="#00000";
+                }else if(signal.status == 1){
+                    color="#00FF00";
+                }else if(signal.status == -1){
+                    color="#FF0000";
+                }
+                signalCircle[count++] = new google.maps.Circle({
+                    strokeColor: color,
+                    strokeOpacity: 1,
+                    strokeWeight: 2,
+                    fillColor: color,
+                    fillOpacity: 0.5,
+                    map: map,
+                    center:  new google.maps.LatLng(signal.location.latitude, signal.location.longitude),
+                    radius: 2
+                }); 
+            });
+            
+            allusers.forEach(function(user){
+                console.log(user);
+                var url;
+                var size;
+                
+                if(user.vehicle_type=='Police Vehicle'){
+                    url = 'http://www.dundjinni.com/forums/uploads/GroovyDave/75F_PoliceCar_GD.png'+'#'+user._id;
+                    size =  new google.maps.Size(73, 40);
+                }   
+                else if(user.vehicle_type=='Ambulance'){
+                    url = 'http://www.dundjinni.com/forums/uploads/Erdrix/CA4_Ambulance1.png'+'#'+user._id;
+                    size =  new google.maps.Size(100, 47);
+                }
+                else{
+                    url='http://www.dundjinni.com/forums/uploads/heruca/Fire_Truck2_SR_hrc.png'+'#'+user._id
+                    size =  new google.maps.Size(81, 33);
+                }
+                    
+                
+                var marker = new google.maps.Marker({
+                    position: new google.maps.LatLng(user.location.latitude, user.location.longitude),
+                    icon: {
+                        url:url,
+                        scaledSize :size,
+                        rotation: 20
+                    },
+                    map: map
+                });
+                userMarkers.push(marker)
+                var infowindow = new google.maps.InfoWindow({
+                    content: user.name + "</br>" + user.vehicle_registration + "</br>" + user.location.last_updated
+                });
 
-        });
-				var count=0;
-				for (var signal in allsignals) {
-          // Add the circle for this city to the map.
-          signalCircle[count++] = new google.maps.Circle({
-            strokeColor: allsignals[signal].color,
-            strokeOpacity: 1,
-            strokeWeight: 2,
-            fillColor: allsignals[signal].color,
-            fillOpacity: 0.5,
-            map: map,
-            center: allsignals[signal].center,
-            radius: 2
-          });
-				}
-
-				/*var trafficLayer = new google.maps.TrafficLayer();
-				trafficLayer.setMap(map);*/
-      }
+                marker.addListener('click', function() {
+                    infowindow.open(map, marker);
+                });
+            });
+            console.log(userMarkers);
+            
+//            var trafficLayer = new google.maps.TrafficLayer();
+//            trafficLayer.setMap(map);
+        }
     </script>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD31tprRrsm610HlrgAYPXkET_UX3ZRHZU &callback=initMap"
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD31tprRrsm610HlrgAYPXkET_UX3ZRHZU"
     async defer></script>
   </body>
 </html>
