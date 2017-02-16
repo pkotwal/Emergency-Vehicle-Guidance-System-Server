@@ -70,8 +70,8 @@
             var toAddSignalDiv = document.getElementById('ToAddSignalDiv');
             var signalTable = document.getElementById('signalTable'); 
             
-//			var socket=io.connect('ws://emergency-vehicle.herokuapp.com/');
-  		    socket=io.connect('ws://127.0.0.1/');
+			var socket=io.connect('ws://emergency-vehicle.herokuapp.com/');
+//  		    socket=io.connect('ws://127.0.0.1/');
             
             socket.on('Init Map',function(data){
                 allsignals = data.allsignals;

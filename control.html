@@ -26,8 +26,8 @@
         var userMarkers=[];
           
         jQuery(function(){
-//			var socket=io.connect('ws://emergency-vehicle.herokuapp.com/');
-  		    var socket=io.connect('ws://127.0.0.1/');
+			var socket=io.connect('ws://emergency-vehicle.herokuapp.com/');
+//  		    var socket=io.connect('ws://127.0.0.1/');
             
             socket.on('user location',function(data){
                 var i;

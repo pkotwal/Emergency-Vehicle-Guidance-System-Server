@@ -169,9 +169,6 @@ io.sockets.on('connection',function(socket){
     });
    
     }
-//	setTimeout(function(){
-//			socket.emit('Change Signal',1);
-//	},10000);
     
     socket.on('Add Signal',function(data){
         var signalGroup = data.signalGroup;
@@ -213,44 +210,3 @@ function bearing(lat1, lat2, lon1, lon2){
 
 //AIzaSyAPevMvwLJvZYzfbbDPDEheI62QpV8QQS0 Directions API
 // mongo: pratik popo1234
-
-
-//<script>
-//var lat1 = 19.06361;
-//var lon1 = 72.83524;
-//
-//var lat2 = 19.06368;
-//var lon2 = 72.83563;
-//
-//var x = 19.06364;
-//var y = 72.83541;
-//coords(lat1, lat2, lon1, lon2);
-//coords(lat1, x, lon1, y);
-//
-//
-//function coords(lat1, lat2, lon1, lon2){
-//
-//var R = 6371e3; // metres
-//
-//var φ1 = lat1*(3.14/180);
-//var φ2 = lat2*(3.14/180);
-//var λ1 = lon1*(3.14/180);
-//var λ2 = lon2*(3.14/180);
-//var Δφ = (lat2-lat1)*(3.14/180);
-//var Δλ = (lon2-lon1)*(3.14/180);
-//
-//var a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-//        Math.cos(φ1) * Math.cos(φ2) *
-//        Math.sin(Δλ/2) * Math.sin(Δλ/2);
-//var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-//
-//var d = R * c;
-//
-//var y = Math.sin(λ2-λ1) * Math.cos(φ2);
-//var x = Math.cos(φ1)*Math.sin(φ2) -
-//        Math.sin(φ1)*Math.cos(φ2)*Math.cos(λ2-λ1);
-//var brng = Math.atan2(y, x)*(180/3.14);
-//
-//console.log(brng);
-//}
-//</script>
