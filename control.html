@@ -4,7 +4,7 @@
 		<script type="text/javascript" src="http://code.jquery.com/jquery-latest.min.js"></script>
 		<script type="text/javascript" src="/socket.io/socket.io.js"></script>
     
-		<title>Simple Map</title>
+		<title>EVGS - Control</title>
         <meta name="viewport" content="initial-scale=1.0">
         <meta charset="utf-8">
         <style>
@@ -148,15 +148,15 @@
                 var size;
                 
                 if(user.vehicle_type=='Police Vehicle'){
-                    url = 'http://www.dundjinni.com/forums/uploads/GroovyDave/75F_PoliceCar_GD.png'+'#'+user._id;
+                    url = 'http://emergency-vehicle.herokuapp.com/police.png'+'#'+user._id;
                     size =  new google.maps.Size(73, 40);
                 }   
                 else if(user.vehicle_type=='Ambulance'){
-                    url = 'http://www.dundjinni.com/forums/uploads/Erdrix/CA4_Ambulance1.png'+'#'+user._id;
+                    url = 'http://emergency-vehicle.herokuapp.com/ambulance.png'+'#'+user._id;
                     size =  new google.maps.Size(100, 47);
                 }
                 else{
-                    url='http://www.dundjinni.com/forums/uploads/heruca/Fire_Truck2_SR_hrc.png'+'#'+user._id
+                    url='http://emergency-vehicle.herokuapp.com/fire.png'+'#'+user._id
                     size =  new google.maps.Size(81, 33);
                 }
                     

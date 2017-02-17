@@ -13,6 +13,7 @@ var express = require('express'),
 var User = mongoose.model('User');
 var Signal = mongoose.model('Signal');
 
+app.use(express.static(__dirname + '/public'));
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json());
 
