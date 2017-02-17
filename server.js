@@ -68,7 +68,7 @@ app.post('/directionRequest', function(req, res){
     'https://maps.googleapis.com/maps/api/directions/json?origin='+slat+','+slong+'&destination='+dlat+','+dlong+'&key=AIzaSyAPevMvwLJvZYzfbbDPDEheI62QpV8QQS0',
     function (error, response, body) {
         if (!error && response.statusCode == 200) {
-            console.log(body);
+//            console.log(body);
             var parsed = JSON.parse(body);
 //            console.log(parsed);
             var routes = (parsed.routes)[0];
