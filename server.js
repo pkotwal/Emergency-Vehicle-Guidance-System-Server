@@ -36,7 +36,7 @@ app.post('/login',function(req,res){
     
     User.findOne({vehicle_registration:registration}, function(err, user){
         if(err){res.status(500).send(err);}
-        if(!use){
+        if(!user){
             var user=new User();
             user.name=name;
             user.vehicle_registration = registration;
