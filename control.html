@@ -23,6 +23,7 @@
       <div id="map"></div>
       <script>      
         var allsignals; 
+        var allusers=[];
         var userMarkers=[];
           
         jQuery(function(){
@@ -42,6 +43,41 @@
 			socket.on('Change Signal',function(data){
 				console.log("Change Signal");
 				changeSignal(data);
+			});
+            
+            socket.on('Signal to Green',function(data){
+				console.log("Signal to Green"+data);
+
+//                console.log(sigGroup);
+                var sigGroup = findSignalGroup(data);
+                for(var i=0; i<allsignals.length; i++){
+                    if(allsignals[i].signalGroup == sigGroup){
+                        if(allsignals[i]._id == data){
+                            changeSignal(i, '#00FF00');
+                        }else{
+                            changeSignal(i, '#FF0000');
+                        }
+                    }
+                } 
+			});
+            
+            function findSignalGroup(data){
+                for(var i=0; i<allsignals.length; i++){
+                    if(allsignals[i]._id == data)
+                        break;
+                }
+                return allsignals[i].signalGroup;
+            }
+            
+            socket.on('Reset Signals',function(data){
+				console.log("Reset Signal"+data);
+                var sigGroup = findSignalGroup(data);
+//                console.log(sigGroup);
+                for(var i=0; i<allsignals.length; i++){
+                    if(allsignals[i].signalGroup == sigGroup){
+                        changeSignal(i,"#000000");
+                    }
+                } 
 			});
             
             socket.on('Init Map',function(data){
@@ -75,19 +111,8 @@
             });
         });	
 	
-        function changeSignal(s){
-			signalCircle[s].setMap(null);
-			console.log(allsignals['signal2']);
-			signalCircle[s] = new google.maps.Circle({
-                strokeColor: '#00ff00',
-                strokeOpacity: 1,
-                strokeWeight: 2,
-                fillColor: '#00ff00',
-                fillOpacity: 0.5,
-                map: map,
-                center: allsignals['signal2'].center,
-                radius: 2
-            });
+        function changeSignal(s, color){
+            signalCircle[s].setOptions({strokeColor:color, fillColor:color});
         }	
 			
         

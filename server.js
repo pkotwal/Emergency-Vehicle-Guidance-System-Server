@@ -135,9 +135,25 @@ app.post('/locationUpdate',function(req,res){
                     if(users){           
                         io.sockets.emit("user location",{user_id:userId, latitude:latitude, longitude:longitude, bearing:bearing});	                           
 //                        console.log("userId: "+userId+" latitude: "+latitude+" longitude:"+longitude+" bearing:"+bearing);
-                        res.send({state:"response_state_success", message: "User Verified"});
+                        res.send("Location Updated");
                     }
     });
+});
+
+app.post('/changeSignal',function(req,res){
+    var userId = req.body.user_id;
+	var signalID1 = req.body.signalID1;
+	var signalID2 = req.body.signalID2;
+    
+	console.log(userId+" "+signalID1+" "+signalID2);
+    
+    if(signalID2!="-1")
+        io.sockets.emit("Signal to Green",signalID2);
+    
+    if(signalID1!="-1")
+        io.sockets.emit("Reset Signals",signalID1);
+    
+    res.send("Signal Changed");
 });
 
 server.listen(port);
