@@ -38,6 +38,7 @@
                    } 
                 }
                 userMarkers[i].setPosition( new google.maps.LatLng( data.latitude, data.longitude ) );
+                
             });
                     
 			socket.on('Change Signal',function(data){
@@ -49,10 +50,10 @@
 				console.log("Signal to Green"+data);
 
 //                console.log(sigGroup);
-                var sigGroup = findSignalGroup(data);
+                var sigGroup = data.signalGroup;
                 for(var i=0; i<allsignals.length; i++){
                     if(allsignals[i].signalGroup == sigGroup){
-                        if(allsignals[i]._id == data){
+                        if(allsignals[i]._id == data.signal){
                             changeSignal(i, '#00FF00');
                         }else{
                             changeSignal(i, '#FF0000');
@@ -61,23 +62,15 @@
                 } 
 			});
             
-            function findSignalGroup(data){
-                for(var i=0; i<allsignals.length; i++){
-                    if(allsignals[i]._id == data)
-                        break;
-                }
-                return allsignals[i].signalGroup;
-            }
-            
             socket.on('Reset Signals',function(data){
 				console.log("Reset Signal"+data);
-                var sigGroup = findSignalGroup(data);
+                var sigGroup = data;
 //                console.log(sigGroup);
                 for(var i=0; i<allsignals.length; i++){
                     if(allsignals[i].signalGroup == sigGroup){
                         changeSignal(i,"#000000");
                     }
-                } 
+                }
 			});
             
             socket.on('Init Map',function(data){
@@ -173,29 +166,29 @@
                 var size;
                 
                 if(user.vehicle_type=='Police Vehicle'){
-                    url = 'http://emergency-vehicle.herokuapp.com/police.png'+'#'+user._id;
-                    size =  new google.maps.Size(73, 40);
+//                    url = 'http://emergency-vehicle.herokuapp.com/police.png'+'#'+user._id;
+                    url = 'http://emergency-vehicle.herokuapp.com/police1.png'+'#'+user._id;
                 }   
                 else if(user.vehicle_type=='Ambulance'){
-                    url = 'http://emergency-vehicle.herokuapp.com/ambulance.png'+'#'+user._id;
-                    size =  new google.maps.Size(73, 34);
+//                    url = 'http://emergency-vehicle.herokuapp.com/ambulance.png'+'#'+user._id;
+                    url = 'http://emergency-vehicle.herokuapp.com/ambulance1.png'+'#'+user._id;
                 }
                 else{
-                    url='http://emergency-vehicle.herokuapp.com/fire.png'+'#'+user._id
-                    size =  new google.maps.Size(73, 30);
+//                    url='http://emergency-vehicle.herokuapp.com/fire.png'+'#'+user._id;
+                    url = 'http://emergency-vehicle.herokuapp.com/firetruck1.png'+'#'+user._id;
                 }
                     
-                
+                size =  new google.maps.Size(50, 50);
                 var marker = new google.maps.Marker({
                     position: new google.maps.LatLng(user.location.latitude, user.location.longitude),
                     icon: {
                         url:url,
-                        scaledSize :size,
-                        rotation: 20
+                        scaledSize :size
                     },
                     map: map
                 });
-                userMarkers.push(marker)
+
+                userMarkers.push(marker);
                 var infowindow = new google.maps.InfoWindow({
                     content: user.name + "</br>" + user.vehicle_registration + "</br>" + user.location.last_updated
                 });

@@ -134,7 +134,7 @@ app.post('/locationUpdate',function(req,res){
                     if (err){res.status(500).send(err);}					
                     if(users){           
                         io.sockets.emit("user location",{user_id:userId, latitude:latitude, longitude:longitude, bearing:bearing});	                           
-//                        console.log("userId: "+userId+" latitude: "+latitude+" longitude:"+longitude+" bearing:"+bearing);
+                        console.log("userId: "+userId+" latitude: "+latitude+" longitude:"+longitude+" bearing:"+bearing);
                         res.send("Location Updated");
                     }
     });
@@ -142,16 +142,35 @@ app.post('/locationUpdate',function(req,res){
 
 app.post('/changeSignal',function(req,res){
     var userId = req.body.user_id;
-	var signalID1 = req.body.signalID1;
-	var signalID2 = req.body.signalID2;
+	var signalGroupToReset = req.body.signalGroupToReset;
+	var signalID = req.body.signalID;
+	var signalGroupPrempted = req.body.signalGroupPrempted;
     
-	console.log(userId+" "+signalID1+" "+signalID2);
+	console.log(userId+" "+signalGroupToReset+" "+signalID+" "+signalGroupPrempted);
     
-    if(signalID2!="-1")
-        io.sockets.emit("Signal to Green",signalID2);
+    if(signalID!="-1" && signalGroupPrempted!="-1"){
+        Signal.update({'signalGroup':signalGroupPrempted, '_id':{$ne:signalID}},{'status':-1, 'premptedBy':userId},{multi:true},
+                          function(err, signals){
+                                if (err){res.status(500).send(err);}					
+                                if(signals){           
+                                    Signal.update({'_id':signalID},{'status':1, 'premptedBy':userId},function(err, signals2){
+                                        if (err){res.status(500).send(err);}					
+                                        if(signals2){           
+                                            io.sockets.emit("Signal to Green",{'signalGroup':signalGroupPrempted, 'signal':signalID});
+                                        }
+                                    });
+                                }
+                            });
+    }
     
-    if(signalID1!="-1")
-        io.sockets.emit("Reset Signals",signalID1);
+    if(signalGroupToReset!="-1"){
+        Signal.update({'signalGroup':signalGroupToReset},{'status':0},{multi:true},function(err, signals){
+            if (err){res.status(500).send(err);}					
+                    if(signals){           
+                        io.sockets.emit("Reset Signals",signalGroupToReset);
+                    }
+        });
+    }
     
     res.send("Signal Changed");
 });
