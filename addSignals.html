@@ -24,7 +24,7 @@
                 min-height:200px;
                 background-color:#fff;
                 margin-bottom:10px;
-                width:250px;
+                width:260px;
                 padding: 10px;
                 -webkit-box-shadow: 1px 1px 10px 1px #333;
                 box-shadow: 1px 1px 10px 1px #333;
@@ -49,7 +49,7 @@
           <h3>Signals To Add</h3>
           <label>Signal Group:</label><input type="number" id="signalGroup"/>
           <table id="signalTable">
-              <tr><th>Latitude</th><th>Longitude</th></tr>
+              <tr><th>Latitude</th><th>Longitude</th><th>X-Dir</th><th>Y-Dir</th></tr>
           </table>
           <div id="ButtonDiv">
               <button id="AddSignalButton">Add Signals</button>
@@ -57,7 +57,8 @@
           </div>
       </div>
       <div id="map"></div>
-      <script>         
+      <script>    
+          
         jQuery(function(){
             
             var allsignals; 
@@ -100,8 +101,21 @@
                     center:  new google.maps.LatLng(data.location.latitude, data.location.longitude),
                     radius: 2
                 }); 
+                var signalInfo = new google.maps.InfoWindow({
+                    content: "Signal ID: " + data._id + "</br> Signal Group: " +  data.signalGroup + "</br> X-Activation: " + data.activationDirection.Xaxis + "&nbsp; Y-Activation: " + data.activationDirection.Yaxis
+                });
+//onclick=socket.emit('DeleteSignal',\""+signal._id+"\")
+                    
+                sigCirc.addListener('click', function(ev) {
+                    signalInfo.setPosition(ev.latLng);
+                    signalInfo.open(map);
+                });
+                
                 signalCircle.push(sigCirc);
+                
+                
             });
+            
     
             function initMap() {			
 
@@ -138,7 +152,7 @@
                 }else if(signal.status == -1){
                     color="#FF0000";
                 }
-                signalCircle[count++] = new google.maps.Circle({
+                signalCircle[count] = new google.maps.Circle({
                     strokeColor: color,
                     strokeOpacity: 1,
                     strokeWeight: 2,
@@ -148,6 +162,18 @@
                     center:  new google.maps.LatLng(signal.location.latitude, signal.location.longitude),
                     radius: 2
                 }); 
+                    
+                 var signalInfo = new google.maps.InfoWindow({
+                    content: "Signal ID: " + signal._id + "</br> Signal Group: " +  signal.signalGroup + "</br> X-Activation: " + signal.activationDirection.Xaxis + "&nbsp; Y-Activation: " + signal.activationDirection.Yaxis
+                });
+//onclick=socket.emit('DeleteSignal',\""+signal._id+"\")
+                    
+                signalCircle[count].addListener('click', function(ev) {
+                    signalInfo.setPosition(ev.latLng);
+                    signalInfo.open(map);
+                });
+                
+                count++;
             });
             
                
@@ -158,7 +184,7 @@
                         lng: event.latLng.lng().toFixed(5)
                     }
                     signalsToAdd.push(signal);
-                    jQuery("#signalTable").append("<tr><td>"+signal.lat+"</td><td>"+signal.lng+"</td></tr>");
+                    jQuery("#signalTable").append("<tr><td>"+signal.lat+"</td><td>"+signal.lng+"</td><td><input class='x' type='number' style='width:50px'/></td><td><input class='y' type='number' style='width:50px'/></td></tr>");
 //                    console.log(signal);    
                 });
 
@@ -176,20 +202,33 @@
                         markers[i].setMap(map);
                     }
                 }
+
                 
                 jQuery("#deleteSignalButton").click(function(){
                     setMapOnAll(null);
-                    jQuery("#signalTable").html("<tr><th>Latitude</th><th>Longitude</th></tr>");
+                    jQuery("#signalTable").html("<tr><th>Latitude</th><th>Longitude</th><th>X-Dir</th><th>Y-Dir</th></tr>");
                     markers=[];
                     signalsToAdd=[];
                 });
-           
+                
                 jQuery("#AddSignalButton").click(function(){
                     var signalGroup = jQuery("#signalGroup").val();
+                    var count = 0;
+                    jQuery("tr").each(function(){
+                         var x = jQuery(this).find(".x").val(),
+                             y = jQuery(this).find(".y").val();
+                        
+                        if(x!=undefined && y!=undefined){
+                            signalsToAdd[count].xDir = x;
+                            signalsToAdd[count].yDir = y;
+                            count++;
+                        }
+                    });
+//                    console.log(signalsToAdd);
                     if(signalGroup!=null && signalGroup>0 && signalsToAdd.length>0){
                         socket.emit('Add Signal',{"signalGroup":signalGroup, "signals":signalsToAdd});
                         setMapOnAll(null);
-                        jQuery("#signalTable").html("<tr><th>Latitude</th><th>Longitude</th></tr>");
+                        jQuery("#signalTable").html("<tr><th>Latitude</th><th>Longitude</th><th>X-Dir</th><th>Y-Dir</th></tr>");
                         markers=[];
                         signalsToAdd=[];
                     }else{

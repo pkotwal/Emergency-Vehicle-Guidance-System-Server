@@ -94,11 +94,19 @@ app.post('/directionRequest', function(req, res){
                     signalsToCheck.forEach(function(signalToCkeck){
                         if(signalToCkeck.location.latitude >= Math.min(decoded[i][0],decoded[i+1][0]) && signalToCkeck.location.latitude <= Math.max(decoded[i][0],decoded[i+1][0]) && signalToCkeck.location.longitude >= Math.min(decoded[i][1],decoded[i+1][1]) &&signalToCkeck.location.longitude <= Math.max(decoded[i][1],decoded[i+1][1]) ){
 //                            console.log(signalToCkeck+" "+decoded[i][0]+","+decoded[i][1]+" "+decoded[i+1][0]+","+decoded[i+1][1]);
-                            var error = Math.abs(bearing(decoded[i][0], decoded[i+1][0], decoded[i][1], decoded[i+1][1]) - bearing(signalToCkeck.location.latitude, decoded[i+1][0], signalToCkeck.location.longitude, decoded[i+1][1])); 
-//                            console.log(error);
-                            if(error<10){
-//                                console.log(signalToCkeck);
-                                signalsPassed.push(signalToCkeck);
+                            var yDir = Math.abs(decoded[i+1][0] - decoded[i][0])/(decoded[i+1][0] - decoded[i][0]);
+                            var xDir = Math.abs(decoded[i+1][1] - decoded[i][1])/(decoded[i+1][1] - decoded[i][1]);
+                            
+//                            console.log("X: "+xDir+" Y: "+yDir);
+//                            console.log(signalToCkeck.activationDirection.Xaxis + " " + signalToCkeck.activationDirection.Yaxis);
+                            
+                            if(!(-1*xDir ==  signalToCkeck.activationDirection.Xaxis || -1*yDir ==  signalToCkeck.activationDirection.Yaxis)){
+                                var error = Math.abs(bearing(decoded[i][0], decoded[i+1][0], decoded[i][1], decoded[i+1][1]) - bearing(signalToCkeck.location.latitude, decoded[i+1][0], signalToCkeck.location.longitude, decoded[i+1][1])); 
+//                              console.log(error);
+                                if(error<10){
+//                                    console.log(signalToCkeck);
+                                    signalsPassed.push(signalToCkeck);
+                                }   
                             }
                         }                       
                     });
@@ -134,7 +142,7 @@ app.post('/locationUpdate',function(req,res){
                     if (err){res.status(500).send(err);}					
                     if(users){           
                         io.sockets.emit("user location",{user_id:userId, latitude:latitude, longitude:longitude, bearing:bearing});	                           
-                        console.log("userId: "+userId+" latitude: "+latitude+" longitude:"+longitude+" bearing:"+bearing);
+//                        console.log("userId: "+userId+" latitude: "+latitude+" longitude:"+longitude+" bearing:"+bearing);
                         res.send("Location Updated");
                     }
     });
@@ -209,7 +217,7 @@ io.sockets.on('connection',function(socket){
     socket.on('Add Signal',function(data){
         var signalGroup = data.signalGroup;
         var signals = data.signals;
-        
+//        console.log(signals);
         signals.forEach(function(sig){
             var signal = new Signal();
             signal.signalGroup=signalGroup;
@@ -217,8 +225,8 @@ io.sockets.on('connection',function(socket){
             signal.premptedBy=0;
             signal.location.latitude=sig.lat;
             signal.location.longitude=sig.lng;
-            signal.activationDirection.Xaxis=0;
-            signal.activationDirection.Yaxis=0;
+            signal.activationDirection.Xaxis=sig.xDir;
+            signal.activationDirection.Yaxis=sig.yDir;
             signal.save(function(err, signal) {
                if(err){res.status(500).send(err);}
 //                console.log("Signal Added");
@@ -226,6 +234,12 @@ io.sockets.on('connection',function(socket){
             });
         });
     });
+    
+    socket.on('DeleteSignal',function(data){
+        console.log(data);    
+    });
+    
+    
 });
 
 function bearing(lat1, lat2, lon1, lon2){
