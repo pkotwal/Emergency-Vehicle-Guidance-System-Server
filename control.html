@@ -43,9 +43,17 @@
                 
             });
                     
-			socket.on('Change Signal',function(data){
-				console.log("Change Signal");
-				changeSignal(data);
+            
+            socket.on('Reset Signals By UserId',function(data){
+				console.log("User ID "+data);
+                for(var i=0; i<allsignals.length; i++){
+//                    console.log(allsignals[i].premptedBy);
+                    if(allsignals[i].premptedBy == data){
+                        changeSignal(i, '#000000');
+                        allsignals[i].premptedBy = 0;
+                    }
+                }
+//				changeSignal(data);
 			});
             
             socket.on('Signal to Green',function(data){
@@ -55,6 +63,7 @@
                 var sigGroup = data.signalGroup;
                 for(var i=0; i<allsignals.length; i++){
                     if(allsignals[i].signalGroup == sigGroup){
+                        allsignals[i].premptedBy=data.premptedBy;
                         if(allsignals[i]._id == data.signal){
                             changeSignal(i, '#00FF00');
                         }else{
@@ -70,6 +79,7 @@
 //                console.log(sigGroup);
                 for(var i=0; i<allsignals.length; i++){
                     if(allsignals[i].signalGroup == sigGroup){
+                        allsignals[i].premptedBy=0;
                         changeSignal(i,"#000000");
                     }
                 }

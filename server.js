@@ -164,7 +164,7 @@ app.post('/changeSignal',function(req,res){
                                     Signal.update({'_id':signalID},{'status':1, 'premptedBy':userId},function(err, signals2){
                                         if (err){res.status(500).send(err);}					
                                         if(signals2){           
-                                            io.sockets.emit("Signal to Green",{'signalGroup':signalGroupPrempted, 'signal':signalID});
+                                            io.sockets.emit("Signal to Green",{'signalGroup':signalGroupPrempted, 'signal':signalID, 'premptedBy': userId});
                                         }
                                     });
                                 }
@@ -172,13 +172,27 @@ app.post('/changeSignal',function(req,res){
     }
     
     if(signalGroupToReset!="-1"){
-        Signal.update({'signalGroup':signalGroupToReset},{'status':0},{multi:true},function(err, signals){
+        Signal.update({'signalGroup':signalGroupToReset},{'status':0, 'premptedBy':0},{multi:true},function(err, signals){
             if (err){res.status(500).send(err);}					
                     if(signals){           
                         io.sockets.emit("Reset Signals",signalGroupToReset);
                     }
         });
     }
+    
+    res.send("Signal Changed");
+});
+
+app.post('/resetAll',function(req,res){
+    var userId = req.body.user_id;
+    
+    Signal.update({'premptedBy':userId},{'status':0, 'premptedBy':0},{multi:true},function(err, signals){
+        if (err){res.status(500).send(err);}					
+                if(signals){       
+                                        console.log("signals");
+                    io.sockets.emit("Reset Signals By UserId",userId);
+                }
+    });
     
     res.send("Signal Changed");
 });
