@@ -142,19 +142,30 @@
             map = new google.maps.Map(document.getElementById('map'), {
                 center: {lat:19.06356, lng: 72.83511},
                 zoom: 19,
-				styles: [
-                          {
-                            "stylers": [
-                              { "visibility": "off" }
-                            ]
-                          },{
-                            "featureType": "road",
-                            "elementType": "all",
-                            "stylers": [
-                              { "visibility": "on" }
-                            ]
-                          }
-                        ]
+				styles:[
+      {
+                featureType: 'poi',
+                elementType: 'all',
+                stylers: [{"visibility": 'off'}]
+              },{
+        "featureType": "road",
+        "elementType": "all",
+        "stylers": [
+          { "visibility": "on" }
+        ]
+      },
+      {
+                featureType: 'transit.station',
+                elementType: 'all',
+                stylers: [ { "visibility": "off" }]
+              },
+{
+                featureType: 'poi.park',
+                elementType: 'geometry.fill',
+                stylers: [{"visibility": "on"}]
+              }
+     
+    ]
             });
 				
             var count=0;
