@@ -25,9 +25,10 @@
         var allusers=[];
         var userMarkers=[];
           
+        var socket;  
         jQuery(function(){
-			var socket=io.connect('ws://emergency-vehicle.herokuapp.com/');
-//  		    var socket=io.connect('ws://127.0.0.1/');
+//			var socket=io.connect('ws://emergency-vehicle.herokuapp.com/');
+  		    socket=io.connect('ws://127.0.0.1/');
             
             socket.on('user location',function(data){
                 var i;
@@ -244,9 +245,43 @@
             });
             console.log(userMarkers);
             
-//            var trafficLayer = new google.maps.TrafficLayer();
-//            trafficLayer.setMap(map);
+            google.maps.event.addListener(map, 'click', function(event) {
+                placeMarker(event.latLng);
+            });
+            
+            var marker, infowindow;
+
+            function placeMarker(location) {
+                if (!marker || !marker.setPosition) {
+                    marker = new google.maps.Marker({
+                        position: location,
+                        map: map,
+                    });
+                } else {
+                    marker.setPosition(location);
+                }
+                if (!!infowindow && !!infowindow.close) {
+                    infowindow.close();
+                }
+
+                infowindow = new google.maps.InfoWindow({
+                    content: 'Latitude: ' + location.lat() + '<br>Longitude: ' + location.lng() + 
+                    '<br> <input type="checkbox" id="amb" value="Ambulance">Ambulance<br>'+
+                    '<input type="checkbox" id="pol" value="Police">Police<br>'+
+                    '<input type="checkbox" id="fir" value="Fire Truck">Fire Truck<br>'+ 
+                    '</br> <button onclick=hello('+location.lat()+','+location.lng()+');>Click Here</button>'
+                });
+                infowindow.open(map, marker);
+            }
         }
+          
+          function hello(lat, lng){
+              var amb = document.getElementById("amb").checked;
+              var pol = document.getElementById("pol").checked;
+              var fir = document.getElementById("fir").checked;
+              socket.emit("Alert Vehicles",{location:{lat:lat, lng:lng},vehicles:{ambulance:amb, police:pol, fire:fir}});
+              console.log({location:{lat:lat, lng:lng},vehicles:{ambulance:amb, police:pol, fire:fir}});
+          }
     </script>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD31tprRrsm610HlrgAYPXkET_UX3ZRHZU"
     async defer></script>

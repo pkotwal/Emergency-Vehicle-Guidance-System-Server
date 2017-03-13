@@ -14,6 +14,8 @@ var userSchema = new mongoose.Schema({
 	name: String,
 	vehicle_registration: String,
 	vehicle_type: String,
+    fcm_id: String,
+    onDuty: Boolean,
 	location:{
 		latitude:Number,
 		longitude: Number,
