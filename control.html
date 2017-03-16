@@ -1,110 +1,127 @@
 <!DOCTYPE html>
 <html>
-  <head>
-		<script type="text/javascript" src="http://code.jquery.com/jquery-latest.min.js"></script>
-		<script type="text/javascript" src="/socket.io/socket.io.js"></script>
-    
-		<title>EVGS - Control</title>
-        <meta name="viewport" content="initial-scale=1.0">
-        <meta charset="utf-8">
-        <style>
-            html, body {
-                height: 100%;
-                margin: 0;
-                padding: 0;
-            }
-            #map {
-                height: 100%;
-            }
-        </style>
-  </head>
-  <body>
-      <div id="map"></div>
-      <script>      
-        var allsignals; 
-        var allusers=[];
-        var userMarkers=[];
-          
-        var socket;  
-        jQuery(function(){
-//			var socket=io.connect('ws://emergency-vehicle.herokuapp.com/');
-  		    socket=io.connect('ws://127.0.0.1/');
-            
-            socket.on('user location',function(data){
+
+<head>
+    <script type="text/javascript" src="http://code.jquery.com/jquery-latest.min.js"></script>
+    <script type="text/javascript" src="/socket.io/socket.io.js"></script>
+
+    <title>EVGS - Control</title>
+    <meta name="viewport" content="initial-scale=1.0">
+    <meta charset="utf-8">
+    <style>
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        
+        #map {
+            height: 100%;
+        }
+        
+        #menu {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 9999;
+            -webkit-box-shadow: 1px 1px 10px 1px #333;
+            box-shadow: 1px 1px 10px 1px #333;
+        }
+        
+        b {
+            font-weight: 500;
+        }
+    </style>
+</head>
+
+<body>
+    <a id="menu" href="addSignals">
+        <button>Add / Delete Signals</button>
+    </a>
+    <div id="map"></div>
+    <script>
+        var allsignals;
+        var allusers = [];
+        var userMarkers = [];
+        var marker, infowindow;
+        var socket;
+
+        jQuery(function () {
+            socket = io.connect('ws://emergency-vehicle.herokuapp.com/');
+            //            socket = io.connect('ws://127.0.0.1/');
+
+            socket.on('user location', function (data) {
                 var i;
                 console.log("user location change");
-                for(i = 0; i < allusers.length; i++){
-                   if(allusers[i]._id  == data.user_id){
-                       break;
-                   } 
-                }
-            
-                userMarkers[i].setPosition( new google.maps.LatLng( data.latitude, data.longitude ) );
-                
-            });
-                    
-            
-            socket.on('Reset Signals By UserId',function(data){
-				console.log("User ID "+data);
-                for(var i=0; i<allsignals.length; i++){
-//                    console.log(allsignals[i].premptedBy);
-                    if(allsignals[i].premptedBy == data){
-                        changeSignal(i, '#000000');
-                        allsignals[i].premptedBy = 0;
-                        allsignals[i].status=0;
+                for (i = 0; i < allusers.length; i++) {
+                    if (allusers[i]._id == data.user_id) {
+                        break;
                     }
                 }
-//				changeSignal(data);
-			});
-            
-            socket.on('Signal to Green',function(data){
-				console.log("Signal to Green"+data);
+                userMarkers[i].setPosition(new google.maps.LatLng(data.latitude, data.longitude));
+            });
 
-//                console.log(sigGroup);
+            socket.on('Reset Signals By UserId', function (data) {
+                console.log("User ID " + data);
+                for (var i = 0; i < allsignals.length; i++) {
+                    //                    console.log(allsignals[i].premptedBy);
+                    if (allsignals[i].premptedBy == data) {
+                        allsignals[i].premptedBy = 0;
+                        allsignals[i].status = 0;
+                        changeSignal(i, '#000000');
+                    }
+                }
+                //                  changeSignal(data);
+            });
+
+            socket.on('Signal to Green', function (data) {
+                console.log("Signal to Green" + data);
+                //                  console.log(sigGroup);
                 var sigGroup = data.signalGroup;
-                for(var i=0; i<allsignals.length; i++){
-                    if(allsignals[i].signalGroup == sigGroup){
-                        allsignals[i].premptedBy=data.premptedBy;
-                        if(allsignals[i]._id == data.signal){
+                for (var i = 0; i < allsignals.length; i++) {
+                    if (allsignals[i].signalGroup == sigGroup) {
+                        allsignals[i].premptedBy = data.premptedBy;
+                        if (allsignals[i]._id == data.signal) {
+                            allsignals[i].status = 1;
                             changeSignal(i, '#00FF00');
-                            allsignals[i].status=1;
-                        }else{
+                        } else {
+                            allsignals[i].status = -1;
                             changeSignal(i, '#FF0000');
-                            allsignals[i].status=-1;
                         }
                     }
-                } 
-			});
-            
-            socket.on('Reset Signals',function(data){
-				console.log("Reset Signal"+data);
+                }
+            });
+
+            socket.on('Reset Signals', function (data) {
+                console.log("Reset Signal" + data);
                 var sigGroup = data;
-//                console.log(sigGroup);
-                for(var i=0; i<allsignals.length; i++){
-                    if(allsignals[i].signalGroup == sigGroup){
-                        allsignals[i].premptedBy=0;
-                        allsignals[i].status=0;
-                        changeSignal(i,"#000000");
+                //                  console.log(sigGroup);
+                for (var i = 0; i < allsignals.length; i++) {
+                    if (allsignals[i].signalGroup == sigGroup) {
+                        allsignals[i].premptedBy = 0;
+                        allsignals[i].status = 0;
+                        changeSignal(i, "#000000");
                     }
                 }
-			});
-            
-            socket.on('Init Map',function(data){
+            });
+
+            socket.on('Init Map', function (data) {
                 allsignals = data.allsignals;
                 allusers = data.allusers;
                 console.log(data);
                 initMap();
-			});
-            
-              socket.on('Draw Signal',function(data){
+            });
+
+            socket.on('Draw Signal', function (data) {
                 allsignals.push(data);
                 var color;
-                if(data.status == 0){
-                    color="#00000";
-                }else if(data.status == 1){
-                    color="#00FF00";
-                }else if(data.status == -1){
-                    color="#FF0000";
+                if (data.status == 0) {
+                    color = "#00000";
+                } else if (data.status == 1) {
+                    color = "#00FF00";
+                } else if (data.status == -1) {
+                    color = "#FF0000";
                 }
                 var sigCirc = new google.maps.Circle({
                     strokeColor: color,
@@ -113,74 +130,89 @@
                     fillColor: color,
                     fillOpacity: 0.5,
                     map: map,
-                    center:  new google.maps.LatLng(data.location.latitude, data.location.longitude),
+                    center: new google.maps.LatLng(data.location.latitude, data.location.longitude),
                     radius: 2
-                }); 
-                  var signalInfo = new google.maps.InfoWindow({
-                    content: "Signal ID: " + data._id + "</br> Signal Group: " +  data.signalGroup + "</br> X-Activation: " + data.activationDirection.Xaxis + "&nbsp; Y-Activation: " + data.activationDirection.Yaxis
                 });
-//onclick=socket.emit('DeleteSignal',\""+signal._id+"\")
-                    
-                sigCirc.addListener('click', function(ev) {
+                var signalInfo = new google.maps.InfoWindow({
+                    content: "<b>Signal ID:</b> " + data._id + "</br> <b>Signal Group:</b> " + data.signalGroup + "</br> <b>X-Activation:</b> " + data.activationDirection.Xaxis + "&nbsp; <b>Y-Activation:</b> " + data.activationDirection.Yaxis
+                });
+                //onclick=socket.emit('DeleteSignal',\""+signal._id+"\")
+
+                sigCirc.addListener('click', function (ev) {
                     signalInfo.setPosition(ev.latLng);
                     signalInfo.open(map);
                 });
-                  
+
                 signalCircle.push(sigCirc);
             });
-        });	
-	
-        function changeSignal(s, color){
-            signalCircle[s].setOptions({strokeColor:color, fillColor:color});
-        }	
-			
-        
+        });
+
+        function changeSignal(s, color) {
+            var temp = signalCircle[s];
+            signalCircle[s].setOptions({
+                strokeColor: color,
+                fillColor: color
+            });
+        }
+
+
         var map;
-        var signalCircle=[];
-    
-        function initMap() {			
+        var signalCircle = [];
+
+        function initMap() {
             console.log("Init Map called");
             map = new google.maps.Map(document.getElementById('map'), {
-                center: {lat:19.06356, lng: 72.83511},
+                center: {
+                    lat: 19.06356,
+                    lng: 72.83511
+                },
                 zoom: 19,
-				styles:[
-      {
-                featureType: 'poi',
-                elementType: 'all',
-                stylers: [{"visibility": 'off'}]
-              },{
-        "featureType": "road",
-        "elementType": "all",
-        "stylers": [
-          { "visibility": "on" }
+                styles: [
+                    {
+                        featureType: 'poi',
+                        elementType: 'all',
+                        stylers: [{
+                            "visibility": 'off'
+                        }]
+              }, {
+                        "featureType": "road",
+                        "elementType": "all",
+                        "stylers": [
+                            {
+                                "visibility": "on"
+                            }
         ]
       },
-      {
-                featureType: 'transit.station',
-                elementType: 'all',
-                stylers: [ { "visibility": "off" }]
+                    {
+                        featureType: 'transit.station',
+                        elementType: 'all',
+                        stylers: [{
+                            "visibility": "off"
+                        }]
               },
-{
-                featureType: 'poi.park',
-                elementType: 'geometry.fill',
-                stylers: [{"visibility": "on"}]
+                    {
+                        featureType: 'poi.park',
+                        elementType: 'geometry.fill',
+                        stylers: [{
+                            "visibility": "on"
+                        }]
               }
-     
+
     ]
             });
-				
-            var count=0;
-            
-            allsignals.forEach(function(signal){
+
+            var count = 0;
+
+            allsignals.forEach(function (signal) {
                 // Add the circle for this city to the map.
                 console.log(signal);
                 var color;
-                if(signal.status == 0){
-                    color="#00000";
-                }else if(signal.status == 1){
-                    color="#00FF00";
-                }else if(signal.status == -1){
-                    color="#FF0000";
+                if (signal.status == 0) {
+                    color = "#00000";
+                } else if (signal.status == 1) {
+                    color = "#00FF00";
+                } else if (signal.status == -1) {
+                    color = "#FF0000";
                 }
                 signalCircle[count] = new google.maps.Circle({
                     strokeColor: color,
@@ -189,47 +221,45 @@
                     fillColor: color,
                     fillOpacity: 0.5,
                     map: map,
-                    center:  new google.maps.LatLng(signal.location.latitude, signal.location.longitude),
+                    center: new google.maps.LatLng(signal.location.latitude, signal.location.longitude),
                     radius: 2
-                }); 
-                
-                var signalInfo = new google.maps.InfoWindow({
-                    content: "Signal ID: " + signal._id + "</br> Signal Group: " +  signal.signalGroup + "</br> X-Activation: " + signal.activationDirection.Xaxis + "&nbsp; Y-Activation: " + signal.activationDirection.Yaxis
                 });
-//onclick=socket.emit('DeleteSignal',\""+signal._id+"\")
-                    
-                signalCircle[count].addListener('click', function(ev) {
+
+                var signalInfo = new google.maps.InfoWindow({
+                    content: "<b>Signal ID:</b> " + signal._id + "</br> <b>Signal Group:</b> " + signal.signalGroup + "</br> <b>X-Activation:</b> " + signal.activationDirection.Xaxis + "&nbsp; <b>Y-Activation:</b> " + signal.activationDirection.Yaxis
+                });
+                //onclick=socket.emit('DeleteSignal',\""+signal._id+"\")
+
+                signalCircle[count].addListener('click', function (ev) {
                     signalInfo.setPosition(ev.latLng);
                     signalInfo.open(map);
                 });
-                
+
                 count++;
             });
-            
-            allusers.forEach(function(user){
+
+            allusers.forEach(function (user) {
                 console.log(user);
                 var url;
                 var size;
-                
-                if(user.vehicle_type=='Police Vehicle'){
-//                    url = 'http://emergency-vehicle.herokuapp.com/police.png'+'#'+user._id;
-                    url = 'http://emergency-vehicle.herokuapp.com/police1.png'+'#'+user._id;
-                }   
-                else if(user.vehicle_type=='Ambulance'){
-//                    url = 'http://emergency-vehicle.herokuapp.com/ambulance.png'+'#'+user._id;
-                    url = 'http://emergency-vehicle.herokuapp.com/ambulance1.png'+'#'+user._id;
+
+                if (user.vehicle_type == 'Police Vehicle') {
+                    //                    url = 'http://emergency-vehicle.herokuapp.com/police.png'+'#'+user._id;
+                    url = 'http://emergency-vehicle.herokuapp.com/police1.png' + '#' + user._id;
+                } else if (user.vehicle_type == 'Ambulance') {
+                    //                    url = 'http://emergency-vehicle.herokuapp.com/ambulance.png'+'#'+user._id;
+                    url = 'http://emergency-vehicle.herokuapp.com/ambulance1.png' + '#' + user._id;
+                } else {
+                    //                    url='http://emergency-vehicle.herokuapp.com/fire.png'+'#'+user._id;
+                    url = 'http://emergency-vehicle.herokuapp.com/firetruck1.png' + '#' + user._id;
                 }
-                else{
-//                    url='http://emergency-vehicle.herokuapp.com/fire.png'+'#'+user._id;
-                    url = 'http://emergency-vehicle.herokuapp.com/firetruck1.png'+'#'+user._id;
-                }
-                    
-                size =  new google.maps.Size(50, 50);
+
+                size = new google.maps.Size(50, 50);
                 var marker = new google.maps.Marker({
                     position: new google.maps.LatLng(user.location.latitude, user.location.longitude),
                     icon: {
-                        url:url,
-                        scaledSize :size
+                        url: url,
+                        scaledSize: size
                     },
                     map: map
                 });
@@ -239,17 +269,29 @@
                     content: user.name + "</br>" + user.vehicle_registration + "</br>" + user.location.last_updated
                 });
 
-                marker.addListener('click', function() {
+                marker.addListener('click', function () {
                     infowindow.open(map, marker);
                 });
             });
             console.log(userMarkers);
-            
-            google.maps.event.addListener(map, 'click', function(event) {
-                placeMarker(event.latLng);
+
+            var update_timeout = null;
+
+            google.maps.event.addListener(map, 'click', function (event) {
+                update_timeout = setTimeout(function () {
+                    placeMarker(event.latLng);
+                }, 400);
             });
-            
-            var marker, infowindow;
+
+            google.maps.event.addListener(map, 'dblclick', function (event) {
+                clearTimeout(update_timeout);
+            });
+
+            google.maps.event.addListener(map, 'zoom_changed', function () {
+                if (map.getZoom() < 19) {
+                    map.setZoom(19);
+                };
+            });
 
             function placeMarker(location) {
                 if (!marker || !marker.setPosition) {
@@ -265,25 +307,39 @@
                 }
 
                 infowindow = new google.maps.InfoWindow({
-                    content: 'Latitude: ' + location.lat() + '<br>Longitude: ' + location.lng() + 
-                    '<br> <input type="checkbox" id="amb" value="Ambulance">Ambulance<br>'+
-                    '<input type="checkbox" id="pol" value="Police">Police<br>'+
-                    '<input type="checkbox" id="fir" value="Fire Truck">Fire Truck<br>'+ 
-                    '</br> <button onclick=hello('+location.lat()+','+location.lng()+');>Click Here</button>'
+                    content: '<h3>Set Emergency Point</h3>' + '<b>Latitude:</b> ' + location.lat().toFixed(5) + '<br><b>Longitude:</b> ' + location.lng().toFixed(5) +
+                        '<br> <input type="checkbox" id="amb" value="Ambulance">Ambulance<br>' +
+                        '<input type="checkbox" id="pol" value="Police">Police<br>' +
+                        '<input type="checkbox" id="fir" value="Fire Truck">Fire Truck<br>' +
+                        '</br> <button onclick=hello(' + location.lat().toFixed(5) + ',' + location.lng().toFixed(5) + ');>Set Emergency Point</button>'
                 });
                 infowindow.open(map, marker);
             }
         }
-          
-          function hello(lat, lng){
-              var amb = document.getElementById("amb").checked;
-              var pol = document.getElementById("pol").checked;
-              var fir = document.getElementById("fir").checked;
-              socket.emit("Alert Vehicles",{location:{lat:lat, lng:lng},vehicles:{ambulance:amb, police:pol, fire:fir}});
-              console.log({location:{lat:lat, lng:lng},vehicles:{ambulance:amb, police:pol, fire:fir}});
-          }
+
+        function hello(lat, lng) {
+            var amb = document.getElementById("amb").checked;
+            var pol = document.getElementById("pol").checked;
+            var fir = document.getElementById("fir").checked;
+            socket.emit("Alert Vehicles", {
+                location: {
+                    lat: lat,
+                    lng: lng
+                },
+                vehicles: {
+                    ambulance: amb,
+                    police: pol,
+                    fire: fir
+                }
+            });
+            infowindow.close();
+            marker.setMap(null);
+            marker = null;
+            alert("Emergency point Set at " + lat + "," + lng);
+            //              console.log({location:{lat:lat, lng:lng},vehicles:{ambulance:amb, police:pol, fire:fir}});
+        }
     </script>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD31tprRrsm610HlrgAYPXkET_UX3ZRHZU"
-    async defer></script>
-  </body>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD31tprRrsm610HlrgAYPXkET_UX3ZRHZU" async defer></script>
+</body>
+
 </html>

@@ -1,95 +1,117 @@
 <!DOCTYPE html>
 <html>
-  <head>
-		<script type="text/javascript" src="http://code.jquery.com/jquery-latest.min.js"></script>
-		<script type="text/javascript" src="/socket.io/socket.io.js"></script>
-    
-		<title>EVGS - Add Signals</title>
-        <meta name="viewport" content="initial-scale=1.0">
-        <meta charset="utf-8">
-        <style>
-            html, body {
-                height: 100%;
-                margin: 0;
-                padding: 0;
-            }
-            #map {
-                height: 100%;
-            }
-            #displayDiv{
-                position:fixed;
-                top:10px;
-                right:10px;
-                z-index:99999;
-                min-height:200px;
-                background-color:#fff;
-                margin-bottom:10px;
-                width:260px;
-                padding: 10px;
-                -webkit-box-shadow: 1px 1px 10px 1px #333;
-                box-shadow: 1px 1px 10px 1px #333;
-            }
-            tr,td,th{
-                border: 1px solid #333;
-            }
-            h3{
-                text-align:center; 
-                margin-bottom:10px;
-            }
-            #ButtonDiv{
-                text-align:center;
-            }
-            table{
-                width: 100%;
-            }
-        </style>
-  </head>
-  <body>
-      <div id="displayDiv">
-          <h3>Signals To Add</h3>
-          <label>Signal Group:</label><input type="number" id="signalGroup"/>
-          <table id="signalTable">
-              <tr><th>Latitude</th><th>Longitude</th><th>X-Dir</th><th>Y-Dir</th></tr>
-          </table>
-          <div id="ButtonDiv">
-              <button id="AddSignalButton">Add Signals</button>
-              <button id="deleteSignalButton">Delete All</button>
-          </div>
-      </div>
-      <div id="map"></div>
-      <script>    
-          
-        jQuery(function(){
-            
-            var allsignals; 
-            var userMarkers=[];
-            var socket;
-            var map;
-            var signalCircle=[];
-            var markers=[];
-            var signalsToAdd =[];
+
+<head>
+    <script type="text/javascript" src="http://code.jquery.com/jquery-latest.min.js"></script>
+    <script type="text/javascript" src="/socket.io/socket.io.js"></script>
+
+    <title>EVGS - Add Signals</title>
+    <meta name="viewport" content="initial-scale=1.0">
+    <meta charset="utf-8">
+    <style>
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        
+        #map {
+            height: 100%;
+        }
+        
+        #displayDiv {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 99999;
+            min-height: 200px;
+            background-color: #fff;
+            margin-bottom: 10px;
+            width: 260px;
+            padding: 10px;
+            -webkit-box-shadow: 1px 1px 10px 1px #333;
+            box-shadow: 1px 1px 10px 1px #333;
+        }
+        
+        tr,
+        td,
+        th {
+            border: 1px solid #333;
+        }
+        
+        h3 {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        
+        #ButtonDiv {
+            text-align: center;
+        }
+        
+        table {
+            width: 100%;
+        }
+        
+        b {
+            font-weight: 500;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="displayDiv">
+        <h3>Signals To Add</h3>
+        <label>Signal Group:</label>
+        <input type="number" id="signalGroup" />
+        <table id="signalTable">
+            <tr>
+                <th>Latitude</th>
+                <th>Longitude</th>
+                <th>X-Dir</th>
+                <th>Y-Dir</th>
+            </tr>
+        </table>
+        <div id="ButtonDiv">
+            <button id="AddSignalButton">Add Signals</button>
+            <button id="deleteSignalButton">Delete All</button>
+        </div>
+    </div>
+    <div id="map"></div>
+    <script>
+        var socket;
+        var allsignals;
+        var userMarkers = [];
+        var socket;
+        var map;
+        var signalCircle = [];
+        var markers = [];
+        var signalsToAdd = [];
+        var signalInfoWindows = [];
+        jQuery(function () {
+
             var toAddSignalDiv = document.getElementById('ToAddSignalDiv');
-            var signalTable = document.getElementById('signalTable'); 
-            
-			var socket=io.connect('ws://emergency-vehicle.herokuapp.com/');
-//  		    socket=io.connect('ws://127.0.0.1/');
-            
-            socket.on('Init Map',function(data){
+            var signalTable = document.getElementById('signalTable');
+
+            socket = io.connect('ws://emergency-vehicle.herokuapp.com/');
+            //            socket = io.connect('ws://127.0.0.1/');
+
+            socket.on('Init Map', function (data) {
                 allsignals = data.allsignals;
                 allusers = data.allusers;
                 console.log(data);
                 initMap();
-			});
-            
-            socket.on('Draw Signal',function(data){
+            });
+
+            socket.on('Draw Signal', function (data) {
                 allsignals.push(data);
                 var color;
-                if(data.status == 0){
-                    color="#00000";
-                }else if(data.status == 1){
-                    color="#00FF00";
-                }else if(data.status == -1){
-                    color="#FF0000";
+                if (data.status == 0) {
+                    color = "#00000";
+                } else if (data.status == 1) {
+                    color = "#00FF00";
+                } else if (data.status == -1) {
+                    color = "#FF0000";
                 }
                 var sigCirc = new google.maps.Circle({
                     strokeColor: color,
@@ -98,156 +120,197 @@
                     fillColor: color,
                     fillOpacity: 0.5,
                     map: map,
-                    center:  new google.maps.LatLng(data.location.latitude, data.location.longitude),
+                    center: new google.maps.LatLng(data.location.latitude, data.location.longitude),
                     radius: 2
-                }); 
-                var signalInfo = new google.maps.InfoWindow({
-                    content: "Signal ID: " + data._id + "</br> Signal Group: " +  data.signalGroup + "</br> X-Activation: " + data.activationDirection.Xaxis + "&nbsp; Y-Activation: " + data.activationDirection.Yaxis
                 });
-//onclick=socket.emit('DeleteSignal',\""+signal._id+"\")
-                    
-                sigCirc.addListener('click', function(ev) {
+                var signalInfo = new google.maps.InfoWindow({
+                    content: "<b>Signal ID:</b> " + data._id + "</br> <b>Signal Group:</b> " + data.signalGroup + "</br> <b>X-Activation:</b> " + data.activationDirection.Xaxis + "&nbsp; <b>Y-Activation:</b> " + data.activationDirection.Yaxis + "</br><button onclick=del(\"" + data._id + "\");>Delete Signal</button>"
+                });
+
+                signalInfoWindows.push(signalInfo);
+                //onclick=socket.emit('DeleteSignal',\""+signal._id+"\")
+
+                sigCirc.addListener('click', function (ev) {
                     signalInfo.setPosition(ev.latLng);
                     signalInfo.open(map);
                 });
-                
+
                 signalCircle.push(sigCirc);
-                
-                
+
+
             });
-            
-    
-            function initMap() {			
+
+            socket.on('Remove Signal', function (data) {
+                for (var i = 0; i < allsignals.length; i++) {
+                    if (allsignals[i]._id == data)
+                        break;
+                }
+                //                console.log(i);
+                signalCircle[i].setMap(null);
+                signalInfoWindows[i].close();
+                signalCircle.splice(i, 1);
+                allsignals.splice(i, 1);
+                signalInfoWindows.splice(i, 1);
+                console.log(allsignals);
+            });
+
+
+            function initMap() {
 
                 map = new google.maps.Map(document.getElementById('map'), {
-                  center: {lat:19.06356, lng: 72.83511},
+                    center: {
+                        lat: 19.06356,
+                        lng: 72.83511
+                    },
+                    minZoom: 15,
                     zoom: 19,
-				    styles: [
-      {
-                featureType: 'poi',
-                elementType: 'all',
-                stylers: [{"visibility": 'off'}]
-              },{
-        "featureType": "road",
-        "elementType": "all",
-        "stylers": [
-          { "visibility": "on" }
+                    styles: [
+                        {
+                            featureType: 'poi',
+                            elementType: 'all',
+                            stylers: [{
+                                "visibility": 'off'
+                            }]
+              }, {
+                            "featureType": "road",
+                            "elementType": "all",
+                            "stylers": [
+                                {
+                                    "visibility": "on"
+                                }
         ]
       },
-      {
-                featureType: 'transit.station',
-                elementType: 'all',
-                stylers: [ { "visibility": "off" }]
+                        {
+                            featureType: 'transit.station',
+                            elementType: 'all',
+                            stylers: [{
+                                "visibility": "off"
+                            }]
               },
-{
-                featureType: 'poi.park',
-                elementType: 'geometry.fill',
-                stylers: [{"visibility": "on"}]
+                        {
+                            featureType: 'poi.park',
+                            elementType: 'geometry.fill',
+                            stylers: [{
+                                "visibility": "on"
+                            }]
               }
-     
+
     ]
                 });
-				
-                var count=0;
-                allsignals.forEach(function(signal){
-                // Add the circle for this city to the map.
-                console.log(signal);
-                var color;
-                if(signal.status == 0){
-                    color="#00000";
-                }else if(signal.status == 1){
-                    color="#00FF00";
-                }else if(signal.status == -1){
-                    color="#FF0000";
-                }
-                signalCircle[count] = new google.maps.Circle({
-                    strokeColor: color,
-                    strokeOpacity: 1,
-                    strokeWeight: 2,
-                    fillColor: color,
-                    fillOpacity: 0.5,
-                    map: map,
-                    center:  new google.maps.LatLng(signal.location.latitude, signal.location.longitude),
-                    radius: 2
-                }); 
-                    
-                 var signalInfo = new google.maps.InfoWindow({
-                    content: "Signal ID: " + signal._id + "</br> Signal Group: " +  signal.signalGroup + "</br> X-Activation: " + signal.activationDirection.Xaxis + "&nbsp; Y-Activation: " + signal.activationDirection.Yaxis
+
+                var count = 0;
+                allsignals.forEach(function (signal) {
+                    // Add the circle for this city to the map.
+                    console.log(signal);
+                    var color = "#000000";
+
+                    signalCircle[count] = new google.maps.Circle({
+                        strokeColor: color,
+                        strokeOpacity: 1,
+                        strokeWeight: 2,
+                        fillColor: color,
+                        fillOpacity: 0.5,
+                        map: map,
+                        center: new google.maps.LatLng(signal.location.latitude, signal.location.longitude),
+                        radius: 2
+                    });
+
+                    var signalInfo = new google.maps.InfoWindow({
+                        content: "<b>Signal ID:</b> " + signal._id + "</br> <b>Signal Group:</b> " + signal.signalGroup + "</br> <b>X-Activation:</b> " + signal.activationDirection.Xaxis + "&nbsp; <b>Y-Activation:</b> " + signal.activationDirection.Yaxis + "</br><button onclick=del(\"" + signal._id + "\");>Delete Signal</button>"
+                    });
+                    signalInfoWindows.push(signalInfo);
+                    //onclick=socket.emit('DeleteSignal',\""+signal._id+"\")
+
+                    signalCircle[count].addListener('click', function (ev) {
+                        signalInfo.setPosition(ev.latLng);
+                        signalInfo.open(map);
+                    });
+
+                    count++;
                 });
-//onclick=socket.emit('DeleteSignal',\""+signal._id+"\")
-                    
-                signalCircle[count].addListener('click', function(ev) {
-                    signalInfo.setPosition(ev.latLng);
-                    signalInfo.open(map);
+
+
+                var update_timeout = null;
+
+                google.maps.event.addListener(map, 'click', function (event) {
+                    update_timeout = setTimeout(function () {
+                        addSignal(event);
+                    }, 400);
                 });
-                
-                count++;
-            });
-            
-               
-                map.addListener('click', function(event) {
+
+                google.maps.event.addListener(map, 'dblclick', function (event) {
+                    clearTimeout(update_timeout);
+                });
+
+                function addSignal(event) {
                     placeMarker(event.latLng);
                     var signal = {
                         lat: event.latLng.lat().toFixed(5),
                         lng: event.latLng.lng().toFixed(5)
                     }
                     signalsToAdd.push(signal);
-                    jQuery("#signalTable").append("<tr><td>"+signal.lat+"</td><td>"+signal.lng+"</td><td><input class='x' type='number' style='width:50px'/></td><td><input class='y' type='number' style='width:50px'/></td></tr>");
-//                    console.log(signal);    
-                });
+                    jQuery("#signalTable").append("<tr><td>" + signal.lat + "</td><td>" + signal.lng + "</td><td><input class='x' type='number' style='width:50px'/></td><td><input class='y' type='number' style='width:50px'/></td></tr>");
 
-        
+                }
+
+
                 function placeMarker(location) {
                     var marker = new google.maps.Marker({
-                        position: location, 
+                        position: location,
                         map: map
                     });
                     markers.push(marker);
                 }
-                
+
                 function setMapOnAll(map) {
                     for (var i = 0; i < markers.length; i++) {
                         markers[i].setMap(map);
                     }
                 }
 
-                
-                jQuery("#deleteSignalButton").click(function(){
+
+                jQuery("#deleteSignalButton").click(function () {
                     setMapOnAll(null);
                     jQuery("#signalTable").html("<tr><th>Latitude</th><th>Longitude</th><th>X-Dir</th><th>Y-Dir</th></tr>");
-                    markers=[];
-                    signalsToAdd=[];
+                    markers = [];
+                    signalsToAdd = [];
                 });
-                
-                jQuery("#AddSignalButton").click(function(){
+
+                jQuery("#AddSignalButton").click(function () {
                     var signalGroup = jQuery("#signalGroup").val();
                     var count = 0;
-                    jQuery("tr").each(function(){
-                         var x = jQuery(this).find(".x").val(),
-                             y = jQuery(this).find(".y").val();
-                        
-                        if(x!=undefined && y!=undefined){
+                    jQuery("tr").each(function () {
+                        var x = jQuery(this).find(".x").val(),
+                            y = jQuery(this).find(".y").val();
+
+                        if (x != undefined && y != undefined) {
                             signalsToAdd[count].xDir = x;
                             signalsToAdd[count].yDir = y;
                             count++;
                         }
                     });
-//                    console.log(signalsToAdd);
-                    if(signalGroup!=null && signalGroup>0 && signalsToAdd.length>0){
-                        socket.emit('Add Signal',{"signalGroup":signalGroup, "signals":signalsToAdd});
+                    //                    console.log(signalsToAdd);
+                    if (signalGroup != null && signalGroup > 0 && signalsToAdd.length > 0) {
+                        socket.emit('Add Signal', {
+                            "signalGroup": signalGroup,
+                            "signals": signalsToAdd
+                        });
                         setMapOnAll(null);
                         jQuery("#signalTable").html("<tr><th>Latitude</th><th>Longitude</th><th>X-Dir</th><th>Y-Dir</th></tr>");
-                        markers=[];
-                        signalsToAdd=[];
-                    }else{
-                        alert("Missing Fields");   
+                        markers = [];
+                        signalsToAdd = [];
+                    } else {
+                        alert("Missing Fields");
                     }
                 });
             }
-        });	
-          
+        });
+
+        function del(id) {
+            socket.emit("DeleteSignal", id);
+        }
     </script>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD31tprRrsm610HlrgAYPXkET_UX3ZRHZU"
-    async defer></script>
-  </body>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD31tprRrsm610HlrgAYPXkET_UX3ZRHZU" async defer></script>
+</body>
+
 </html>
