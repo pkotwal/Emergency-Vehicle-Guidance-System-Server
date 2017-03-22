@@ -94,7 +94,7 @@
             var signalTable = document.getElementById('signalTable');
 
             socket = io.connect('ws://emergency-vehicle.herokuapp.com/');
-            //            socket = io.connect('ws://127.0.0.1/');
+            //                        socket = io.connect('ws://127.0.0.1/');
 
             socket.on('Init Map', function (data) {
                 allsignals = data.allsignals;

@@ -69,6 +69,7 @@ app.post('/login', function (req, res) {
                 if (err) {
                     res.status(500).send(err);
                 }
+                io.sockets.emit("Draw User", user);
                 res.send({
                     state: "SUCCESS",
                     user: user,
@@ -108,7 +109,7 @@ app.post('/directionRequest', function (req, res) {
     });
 
     request.get(
-        'https://maps.googleapis.com/maps/api/directions/json?origin=' + slat + ',' + slong + '&destination=' + dlat + ',' + dlong + '&key=AIzaSyAPevMvwLJvZYzfbbDPDEheI62QpV8QQS0',
+        'https://maps.googleapis.com/maps/api/directions/json?origin=' + slat + ',' + slong + '&destination=' + dlat + ',' + dlong + '&key=AIzaSyAPevMvwLJvZYzfbbDPDEheI62QpV8QQS0&units=metric',
         function (error, response, body) {
             if (!error && response.statusCode == 200) {
                 //            console.log(body);

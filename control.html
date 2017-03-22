@@ -145,6 +145,43 @@
 
                 signalCircle.push(sigCirc);
             });
+
+            socket.on('Draw User', function (data) {
+                allusers.push(data);
+
+                var url;
+                var size;
+
+                if (data.vehicle_type == 'Police Vehicle') {
+                    //                    url = 'http://emergency-vehicle.herokuapp.com/police.png'+'#'+user._id;
+                    url = 'http://emergency-vehicle.herokuapp.com/police1.png' + '#' + data._id;
+                } else if (data.vehicle_type == 'Ambulance') {
+                    //                    url = 'http://emergency-vehicle.herokuapp.com/ambulance.png'+'#'+user._id;
+                    url = 'http://emergency-vehicle.herokuapp.com/ambulance1.png' + '#' + data._id;
+                } else {
+                    //                    url='http://emergency-vehicle.herokuapp.com/fire.png'+'#'+user._id;
+                    url = 'http://emergency-vehicle.herokuapp.com/firetruck1.png' + '#' + data._id;
+                }
+
+                size = new google.maps.Size(50, 50);
+                var marker = new google.maps.Marker({
+                    position: new google.maps.LatLng(data.location.latitude, data.location.longitude),
+                    icon: {
+                        url: url,
+                        scaledSize: size
+                    },
+                    map: map
+                });
+
+                userMarkers.push(marker);
+                var infowindow = new google.maps.InfoWindow({
+                    content: data.name + "</br>" + data.vehicle_registration + "</br>" + data.location.last_updated
+                });
+
+                marker.addListener('click', function () {
+                    infowindow.open(map, marker);
+                });
+            });
         });
 
         function changeSignal(s, color) {
@@ -289,8 +326,13 @@
 
             google.maps.event.addListener(map, 'zoom_changed', function () {
                 if (map.getZoom() < 19) {
-                    map.setZoom(19);
-                };
+                    //                    map.setZoom(19);
+                    for (var i = 0; i < signalCircle.length; i++)
+                        signalCircle[i].setMap(null);
+                } else {
+                    for (var i = 0; i < signalCircle.length; i++)
+                        signalCircle[i].setMap(map);
+                }
             });
 
             function placeMarker(location) {
