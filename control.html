@@ -49,7 +49,7 @@
 
         jQuery(function () {
             socket = io.connect('ws://emergency-vehicle.herokuapp.com/');
-            //            socket = io.connect('ws://127.0.0.1/');
+//                        socket = io.connect('ws://127.0.0.1/');
 
             socket.on('user location', function (data) {
                 var i;
@@ -302,8 +302,13 @@
                 });
 
                 userMarkers.push(marker);
+                var options = {  
+    weekday: "long", year: "numeric", month: "short",  
+    day: "numeric", hour: "2-digit", minute: "2-digit"  
+};  
+ 
                 var infowindow = new google.maps.InfoWindow({
-                    content: user.name + "</br>" + user.vehicle_registration + "</br>" + user.location.last_updated
+                    content:"<b>Name: </b>"+ user.name + "</br>" + "<b>Registration No.: </b>"+user.vehicle_registration + "</br>" + "<b>Last Updated: </b>"+ new Date(user.location.last_updated).toLocaleTimeString("en-us", options)
                 });
 
                 marker.addListener('click', function () {
