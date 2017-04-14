@@ -9,6 +9,7 @@ var express = require('express'),
     request = require('request'),
     polyline = require('polyline'),
     models = require('./models'),
+    fs = require('fs'),
     admin = require("firebase-admin");
 
 var User = mongoose.model('User');
@@ -47,42 +48,54 @@ app.post('/login', function (req, res) {
 
     console.log("Name: " + name + " Registration:" + registration + " Type:" + type + " Token:" + fcm);
 
-    User.findOne({
-        vehicle_registration: registration
-    }, function (err, user) {
-        if (err) {
-            res.status(500).send(err);
-        }
-        if (!user) {
-            var user = new User();
-            user.name = name;
-            user.vehicle_registration = registration;
-            user.vehicle_type = type;
-            user.location.latitude = 0;
-            user.location.longitude = 0;
-            user.location.last_updated = 0;
-            user.location.bearing = 0;
-            user.onDuty = false;
-            user.fcm_id = fcm;
-
-            user.save(function (err, user) {
+    try {
+        var data = fs.readFileSync('registered-vehicles.csv', 'utf8');
+        var vehicles = data.split(' ');
+        if (vehicles.indexOf(registration) >= 0) {
+            User.findOne({
+                vehicle_registration: registration
+            }, function (err, user) {
                 if (err) {
                     res.status(500).send(err);
                 }
-                io.sockets.emit("Draw User", user);
-                res.send({
-                    state: "SUCCESS",
-                    user: user,
-                    message: "SignUp Successful"
-                });
+                if (!user) {
+                    var user = new User();
+                    user.name = name;
+                    user.vehicle_registration = registration;
+                    user.vehicle_type = type;
+                    user.location.latitude = 0;
+                    user.location.longitude = 0;
+                    user.location.last_updated = 0;
+                    user.location.bearing = 0;
+                    user.onDuty = false;
+                    user.fcm_id = fcm;
+                    user.save(function (err, user) {
+                        if (err) {
+                            res.status(500).send(err);
+                        }
+                        io.sockets.emit("Draw User", user);
+                        res.send({
+                            state: "SUCCESS",
+                            user: user,
+                            message: "SignUp Successful"
+                        });
+                    });
+                } else {
+                    res.send({
+                        state: "FAILURE",
+                        message: "Vehicle Already Signed In"
+                    });
+                }
             });
         } else {
             res.send({
                 state: "FAILURE",
-                message: "Vehicle Already Registered"
+                message: "Vehicle Not in Registered as Emergency Vehicle"
             });
         }
-    });
+    } catch (e) {
+        console.log('Error:', e.stack);
+    }
 });
 
 app.post('/directionRequest', function (req, res) {
@@ -528,6 +541,5 @@ function distance(lat1, lat2, lon1, lon2) {
 
 server.listen(port);
 console.log("Server Started on port " + port);
-
 //AIzaSyAPevMvwLJvZYzfbbDPDEheI62QpV8QQS0 Directions API
 // mongo: pratik popo1234
