@@ -48,12 +48,14 @@
         var socket;
 
         jQuery(function () {
-            socket = io.connect('ws://emergency-vehicle.herokuapp.com/');
-//                        socket = io.connect('ws://127.0.0.1/');
+//            socket = io.connect('ws://emergency-vehicle.herokuapp.com/');
+                        socket = io.connect('ws://127.0.0.1/');
 
             socket.on('user location', function (data) {
                 var i;
+            
                 console.log("user location change");
+                console.log(data)
                 for (i = 0; i < allusers.length; i++) {
                     if (allusers[i]._id == data.user_id) {
                         break;
@@ -148,7 +150,8 @@
 
             socket.on('Draw User', function (data) {
                 allusers.push(data);
-
+                console.log(data);
+                console.log(allusers);
                 var url;
                 var size;
 

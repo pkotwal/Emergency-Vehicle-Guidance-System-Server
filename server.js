@@ -98,6 +98,22 @@ app.post('/login', function (req, res) {
     }
 });
 
+app.post('/signout', function (req, res) {
+    var userId = req.body.userId;
+    console.log(userId);
+    User.remove({
+        _id: userId
+    }, function (err) {
+        if (err) {
+            res.status(500).send(err);
+        } else {
+            res.json({
+                'status': "SUCCESS"
+            });
+        }
+    });
+});
+
 app.post('/directionRequest', function (req, res) {
     var userId = req.body.userId;
     var slat = req.body.slat;
