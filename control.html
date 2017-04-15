@@ -61,7 +61,7 @@
 
         jQuery(function () {
             socket = io.connect('ws://emergency-vehicle.herokuapp.com/');
-            //            socket = io.connect('ws://127.0.0.1/');
+            //                        socket = io.connect('ws://127.0.0.1/');
 
             socket.on('user location', function (data) {
                 var i;
@@ -73,6 +73,7 @@
                         break;
                     }
                 }
+                console.log(i);
                 allusers[i].location.last_updated = data.lastUpdated;
                 allusers[i].location.latitude = data.latitude;
                 allusers[i].location.longitude = data.longitude;
@@ -119,7 +120,7 @@
                 userMarkers[i].setMap(null);
                 userInfoWindows[i].close();
                 userMarkers.splice(i, 1);
-                allsignals.splice(i, 1);
+                allusers.splice(i, 1);
                 userInfoWindows.splice(i, 1);
                 //                console.log(allsignals);
             });
@@ -196,6 +197,7 @@
             });
 
             socket.on('Draw User', function (data) {
+                console.log("New User");
                 allusers.push(data);
                 console.log(data);
                 console.log(allusers);
@@ -222,8 +224,9 @@
                     },
                     map: map
                 });
-
+                console.log(userMarkers);
                 userMarkers.push(marker);
+                console.log(userMarkers);
                 var infowindow = new google.maps.InfoWindow({
                     content: "<b>Name: </b>" + data.name + "</br>" + "<b>Registration No.: </b>" + data.vehicle_registration + "</br>" + "<b>Last Updated: </b>" + new Date(data.location.last_updated).toLocaleTimeString("en-us", options)
                 });

@@ -94,7 +94,7 @@
             var signalTable = document.getElementById('signalTable');
 
             socket = io.connect('ws://emergency-vehicle.herokuapp.com/');
-            //                                    socket = io.connect('ws://127.0.0.1/');
+            //                                                socket = io.connect('ws://127.0.0.1/');
 
             socket.on('Init Map', function (data) {
                 allsignals = data.allsignals;
@@ -229,7 +229,6 @@
                     count++;
                 });
 
-
                 var update_timeout = null;
 
                 google.maps.event.addListener(map, 'click', function (event) {
@@ -253,7 +252,6 @@
 
                 }
 
-
                 function placeMarker(location) {
                     var marker = new google.maps.Marker({
                         position: location,
@@ -267,7 +265,6 @@
                         markers[i].setMap(map);
                     }
                 }
-
 
                 jQuery("#deleteSignalButton").click(function () {
                     setMapOnAll(null);
