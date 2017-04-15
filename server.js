@@ -107,6 +107,7 @@ app.post('/signout', function (req, res) {
         if (err) {
             res.status(500).send(err);
         } else {
+            io.sockets.emit("Delete User", userId);
             res.json({
                 'status': "SUCCESS"
             });
@@ -232,14 +233,15 @@ app.post('/locationUpdate', function (req, res) {
     var latitude = req.body.latitude;
     var longitude = req.body.longitude;
     var bearing = req.body.bearing;
-
+    
+    var updated = moment.utc().format("x");
     User.update({
             _id: userId
         }, {
             'location.latitude': latitude,
             'location.longitude': longitude,
             'location.bearing': bearing,
-            'location.last_updated': moment.utc().format("x")
+            'location.last_updated': updated
         },
         function (err, users) {
             if (err) {
@@ -250,7 +252,8 @@ app.post('/locationUpdate', function (req, res) {
                     user_id: userId,
                     latitude: latitude,
                     longitude: longitude,
-                    bearing: bearing
+                    bearing: bearing,
+                    lastUpdated: updated
                 });
                 //                        console.log("userId: "+userId+" latitude: "+latitude+" longitude:"+longitude+" bearing:"+bearing);
                 res.send("Location Updated");

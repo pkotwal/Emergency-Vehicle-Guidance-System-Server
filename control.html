@@ -45,15 +45,27 @@
         var allusers = [];
         var userMarkers = [];
         var marker, infowindow;
+        var signalInfoWindows = [];
+        var userInfoWindows = [];
         var socket;
+
+        var options = {
+            weekday: "long",
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit"
+        };
 
         jQuery(function () {
             socket = io.connect('ws://emergency-vehicle.herokuapp.com/');
-//                        socket = io.connect('ws://127.0.0.1/');
+            //            socket = io.connect('ws://127.0.0.1/');
 
             socket.on('user location', function (data) {
                 var i;
-            
+
                 console.log("user location change");
                 console.log(data)
                 for (i = 0; i < allusers.length; i++) {
@@ -61,7 +73,14 @@
                         break;
                     }
                 }
+                allusers[i].location.last_updated = data.lastUpdated;
+                allusers[i].location.latitude = data.latitude;
+                allusers[i].location.longitude = data.longitude;
+                allusers[i].location.bearing = data.bearing;
+
+
                 userMarkers[i].setPosition(new google.maps.LatLng(data.latitude, data.longitude));
+                userInfoWindows[i].setContent("<b>Name: </b>" + allusers[i].name + "</br>" + "<b>Registration No.: </b>" + allusers[i].vehicle_registration + "</br>" + "<b>Last Updated: </b>" + new Date().toLocaleTimeString("en-us", options))
             });
 
             socket.on('Reset Signals By UserId', function (data) {
@@ -75,6 +94,34 @@
                     }
                 }
                 //                  changeSignal(data);
+            });
+
+            socket.on('Remove Signal', function (data) {
+                for (var i = 0; i < allsignals.length; i++) {
+                    if (allsignals[i]._id == data)
+                        break;
+                }
+                //                console.log(i);
+                signalCircle[i].setMap(null);
+                signalInfoWindows[i].close();
+                signalCircle.splice(i, 1);
+                allsignals.splice(i, 1);
+                signalInfoWindows.splice(i, 1);
+                console.log(allsignals);
+            });
+
+            socket.on('Delete User', function (data) {
+                for (var i = 0; i < allusers.length; i++) {
+                    if (allusers[i]._id == data)
+                        break;
+                }
+                //                console.log(i);
+                userMarkers[i].setMap(null);
+                userInfoWindows[i].close();
+                userMarkers.splice(i, 1);
+                allsignals.splice(i, 1);
+                userInfoWindows.splice(i, 1);
+                //                console.log(allsignals);
             });
 
             socket.on('Signal to Green', function (data) {
@@ -139,7 +186,7 @@
                     content: "<b>Signal ID:</b> " + data._id + "</br> <b>Signal Group:</b> " + data.signalGroup + "</br> <b>X-Activation:</b> " + data.activationDirection.Xaxis + "&nbsp; <b>Y-Activation:</b> " + data.activationDirection.Yaxis
                 });
                 //onclick=socket.emit('DeleteSignal',\""+signal._id+"\")
-
+                signalInfoWindows.push(signalInfo)
                 sigCirc.addListener('click', function (ev) {
                     signalInfo.setPosition(ev.latLng);
                     signalInfo.open(map);
@@ -178,9 +225,9 @@
 
                 userMarkers.push(marker);
                 var infowindow = new google.maps.InfoWindow({
-                    content: data.name + "</br>" + data.vehicle_registration + "</br>" + data.location.last_updated
+                    content: "<b>Name: </b>" + data.name + "</br>" + "<b>Registration No.: </b>" + data.vehicle_registration + "</br>" + "<b>Last Updated: </b>" + new Date(data.location.last_updated).toLocaleTimeString("en-us", options)
                 });
-
+                userInfoWindows.push(infowindow);
                 marker.addListener('click', function () {
                     infowindow.open(map, marker);
                 });
@@ -269,6 +316,7 @@
                 });
                 //onclick=socket.emit('DeleteSignal',\""+signal._id+"\")
 
+                signalInfoWindows.push(signalInfo);
                 signalCircle[count].addListener('click', function (ev) {
                     signalInfo.setPosition(ev.latLng);
                     signalInfo.open(map);
@@ -304,15 +352,12 @@
                 });
 
                 userMarkers.push(marker);
-                var options = {  
-    weekday: "long", year: "numeric", month: "short",  
-    day: "numeric", hour: "2-digit", minute: "2-digit"  
-};  
- 
+
                 var infowindow = new google.maps.InfoWindow({
-                    content:"<b>Name: </b>"+ user.name + "</br>" + "<b>Registration No.: </b>"+user.vehicle_registration + "</br>" + "<b>Last Updated: </b>"+ new Date(user.location.last_updated).toLocaleTimeString("en-us", options)
+                    content: "<b>Name: </b>" + user.name + "</br>" + "<b>Registration No.: </b>" + user.vehicle_registration + "</br>" + "<b>Last Updated: </b>" + new Date(user.location.last_updated).toLocaleTimeString("en-us", options)
                 });
 
+                userInfoWindows.push(infowindow);
                 marker.addListener('click', function () {
                     infowindow.open(map, marker);
                 });
